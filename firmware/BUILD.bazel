@@ -1,0 +1,62 @@
+load("//tools/esp_idf:defs.bzl", "esp_idf_build")
+
+package(default_visibility = ["//visibility:public"])
+
+# Build flag for target selection
+config_setting(
+    name = "target_esp32c6",
+    flag_values = {":target": "esp32c6"},
+)
+
+config_setting(
+    name = "target_esp32h2",
+    flag_values = {":target": "esp32h2"},
+)
+
+# String flag for target
+string_flag(
+    name = "target",
+    build_setting_default = "esp32c6",
+)
+
+# Firmware build for ESP32-C6
+esp_idf_build(
+    name = "smart_garland_c6",
+    srcs = glob([
+        "main/**/*",
+        "components/**/*",
+        "CMakeLists.txt",
+        "idf_component.yml",
+        "partitions.csv",
+        "sdkconfig.defaults",
+        "sdkconfig.defaults.c6_thread",
+        "Kconfig.projbuild",
+    ]),
+    project_dir = "firmware",
+    target = "esp32c6",
+    sdkconfig_defaults = [
+        "sdkconfig.defaults",
+        "sdkconfig.defaults.c6_thread",
+    ],
+)
+
+# Firmware build for ESP32-H2
+esp_idf_build(
+    name = "smart_garland_h2",
+    srcs = glob([
+        "main/**/*",
+        "components/**/*",
+        "CMakeLists.txt",
+        "idf_component.yml",
+        "partitions.csv",
+        "sdkconfig.defaults",
+        "sdkconfig.defaults.h2_thread",
+        "Kconfig.projbuild",
+    ]),
+    project_dir = "firmware",
+    target = "esp32h2",
+    sdkconfig_defaults = [
+        "sdkconfig.defaults",
+        "sdkconfig.defaults.h2_thread",
+    ],
+)

@@ -1,0 +1,48 @@
+menu "Smart Garland Configuration"
+
+    menu "LED Configuration"
+        config GARLAND_LED_GPIO
+            int "LED Data GPIO Pin"
+            default 8
+            help
+                GPIO pin connected to WS2812B data line.
+
+        config GARLAND_LED_COUNT
+            int "Number of LEDs"
+            default 1
+            range 1 1000
+            help
+                Total number of LEDs in the strip.
+    endmenu
+
+    menu "Effects Configuration"
+        config GARLAND_EFFECTS_ENABLED
+            bool "Enable Animation Effects"
+            default n
+            help
+                Enable animation effects engine (rainbow, fade, etc.)
+
+        config GARLAND_EFFECTS_FPS
+            int "Animation FPS"
+            default 30
+            range 10 120
+            depends on GARLAND_EFFECTS_ENABLED
+            help
+                Frames per second for animations.
+    endmenu
+
+    menu "Segmentation"
+        config GARLAND_SEGMENTS_ENABLED
+            bool "Enable LED Segmentation"
+            default n
+            help
+                Enable independent control of LED segments.
+
+        config GARLAND_MAX_SEGMENTS
+            int "Maximum Segments"
+            default 4
+            range 1 16
+            depends on GARLAND_SEGMENTS_ENABLED
+    endmenu
+
+endmenu

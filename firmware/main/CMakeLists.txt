@@ -1,0 +1,12 @@
+idf_component_register(
+    SRCS
+        "app_main.cpp"
+        "app_driver.cpp"
+        "app_matter.cpp"
+    INCLUDE_DIRS
+        "."
+    PRIV_REQUIRES
+        chip
+        esp_matter
+        led_strip
+)
