@@ -1,0 +1,37 @@
+[package]
+name = "smart-garland"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Matter-over-Thread smart garland for ESP32-C6/H2"
+
+[dependencies]
+# Embassy async runtime
+embassy-executor = { version = "0.7", features = ["arch-riscv32", "executor-thread"] }
+embassy-time = { version = "0.4", features = ["generic-queue"] }
+embassy-sync = "0.6"
+
+# ESP32-C6 HAL (latest stable)
+esp-hal = { version = "1.0.0-rc.0", features = ["esp32c6", "unstable"] }
+esp-hal-embassy = { version = "0.9", features = ["esp32c6"] }
+
+# Logging and debugging
+esp-println = { version = "0.14", features = ["esp32c6", "log"] }
+esp-backtrace = { version = "0.16", features = ["esp32c6", "panic-handler", "println"] }
+log = "0.4"
+
+# Utilities
+static_cell = "2.1"
+
+# TODO: Add when implementing Thread
+# esp-openthread = { git = "https://github.com/esp-rs/esp-openthread" }
+
+# TODO: Add when implementing Matter
+# rs-matter = { git = "https://github.com/project-chip/rs-matter" }
+
+[profile.release]
+opt-level = "s"
+lto = "fat"
+
+[profile.dev]
+opt-level = 1
