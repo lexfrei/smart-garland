@@ -1,33 +1,46 @@
 [package]
 name = "smart-garland"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+rust-version = "1.86.0"
 license = "MIT"
 description = "Matter-over-Thread smart garland for ESP32-C6/H2"
 
 [dependencies]
-# Embassy async runtime
-embassy-executor = { version = "0.7", features = ["arch-riscv32", "executor-thread"] }
-embassy-time = { version = "0.4", features = ["generic-queue"] }
-embassy-sync = "0.6"
-
-# ESP32-C6 HAL (latest stable)
-esp-hal = { version = "1.0.0-rc.0", features = ["esp32c6", "unstable"] }
-esp-hal-embassy = { version = "0.9", features = ["esp32c6"] }
-
-# Logging and debugging
-esp-println = { version = "0.14", features = ["esp32c6", "log"] }
+# ESP32-C6 HAL from crates.io (stable 1.0)
+esp-hal = { version = "1", features = ["esp32c6", "unstable", "log-04"] }
+esp-rtos = { version = "0.2", features = ["esp32c6", "embassy"] }
+esp-println = { version = "0.14", features = ["esp32c6", "log-04"] }
 esp-backtrace = { version = "0.16", features = ["esp32c6", "panic-handler", "println"] }
+esp-bootloader-esp-idf = { version = "0.4", features = ["esp32c6"] }
+esp-alloc = "0.9"
+
+# Radio: IEEE 802.15.4 (Thread) + BLE (commissioning)
+esp-radio = { version = "0.17", features = ["esp32c6", "ieee802154", "ble"] }
+
+# OpenThread for Thread networking (MTD mode)
+openthread = { git = "https://github.com/esp-rs/openthread", features = ["esp-radio", "udp", "isupper", "log"] }
+
+# Matter protocol (no_std mode)
+rs-matter = { git = "https://github.com/project-chip/rs-matter", default-features = false, features = ["rustcrypto"] }
+
+# Embassy async runtime
+embassy-executor = { version = "0.9", features = ["arch-riscv32"] }
+embassy-time = "0.5"
+embassy-sync = "0.7"
+embassy-net = { version = "0.7", features = ["proto-ipv6", "medium-ip", "udp", "log"] }
+embassy-futures = "0.1"
+
+# Logging
 log = "0.4"
 
 # Utilities
 static_cell = "2.1"
+heapless = "0.8"
 
-# TODO: Add when implementing Thread
-# esp-openthread = { git = "https://github.com/esp-rs/esp-openthread" }
-
-# TODO: Add when implementing Matter
-# rs-matter = { git = "https://github.com/project-chip/rs-matter" }
+[lints.rust]
+# warnings = "deny"  # Re-enable after development
+dead_code = "allow"
 
 [profile.release]
 opt-level = "s"
