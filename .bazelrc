@@ -1,9 +1,0 @@
-# Build settings
-build --incompatible_strict_action_env
-
-# Target configurations
-build:esp32c6 --//firmware:target=esp32c6
-build:esp32h2 --//firmware:target=esp32h2
-
-# Default to C6 for development
-build --config=esp32c6

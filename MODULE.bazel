@@ -1,4 +1,0 @@
-module(
-    name = "smart_garland",
-    version = "0.1.0",
-)
