@@ -1,7 +1,8 @@
 # ADR-002: Thread Networking Configuration
 
-**Status:** Accepted
+**Status:** Accepted (Updated)
 **Date:** 2024-12-23
+**Updated:** 2024-12-23
 
 ## Context
 
@@ -19,12 +20,18 @@ Rationale:
 - Single protocol to debug
 - H2 doesn't have WiFi anyway — unified codebase
 
-### Thread Device Roles
+### Thread Device Role: MTD Only
 
 | Chip | Role | Rationale |
 |------|------|-----------|
-| ESP32-C6 | FTD (Full Thread Device) | More RAM, can route |
-| ESP32-H2 | MTD (Minimal Thread Device) | Memory constrained, sleepy end device |
+| ESP32-C6 | MTD (Minimal Thread Device) | End device, doesn't need routing |
+| ESP32-H2 | MTD (Minimal Thread Device) | End device, lower power |
+
+**Updated**: Originally planned FTD for C6, but:
+- Garland is end device, doesn't route traffic
+- MTD is sufficient and simpler
+- esp-openthread has better MTD support
+- Unified behavior across chips
 
 ### Border Router
 
@@ -41,40 +48,38 @@ BLE-based commissioning (standard Matter flow):
 4. Device joins Thread network
 5. BLE disabled, Thread-only operation
 
-## Configuration
+## Configuration (Rust)
 
-### sdkconfig.defaults.c6_thread
+Thread configuration via esp-openthread in Rust code:
 
-```
-CONFIG_OPENTHREAD_ENABLED=y
-CONFIG_OPENTHREAD_FTD=y
-CONFIG_ENABLE_WIFI_STATION=n
-CONFIG_ENABLE_WIFI_AP=n
+```rust
+// Cargo.toml
+[dependencies]
+esp-openthread = { git = "https://github.com/esp-rs/esp-openthread", features = ["mtd"] }
+
+// main.rs
+let config = ThreadConfig {
+    role: ThreadRole::MinimalEndDevice,
+    // Network credentials from commissioning
+};
 ```
 
-### sdkconfig.defaults.h2_thread
-
-```
-CONFIG_OPENTHREAD_ENABLED=y
-CONFIG_OPENTHREAD_MTD=y
-```
+No sdkconfig files needed — pure Rust configuration.
 
 ## Thread Network Parameters
 
-Using defaults for development:
-- Channel: 15
-- PAN ID: 0x1234
-- Network name: "OpenThread"
-
-Production devices will receive credentials during commissioning.
+Network credentials received during Matter commissioning:
+- Channel, PAN ID, Network Key — from Border Router
+- No hardcoded defaults needed
 
 ## Consequences
 
 ### Positive
-- Unified codebase for C6 and H2
+- Unified codebase for C6 and H2 (both MTD)
 - Lower power consumption
-- Simpler debugging (one protocol)
+- Simpler debugging (one protocol, one role)
 - Works with existing Apple/Google Thread infrastructure
+- Pure Rust configuration
 
 ### Negative
 - Requires Thread Border Router in user's home

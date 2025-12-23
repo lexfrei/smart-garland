@@ -1,72 +1,75 @@
 # ADR-001: Matter SDK Selection
 
-**Status:** Accepted
+**Status:** Accepted (Updated)
 **Date:** 2024-12-23
+**Updated:** 2024-12-23
 
 ## Context
 
 Need to choose Matter SDK for ESP32-C6/H2 smart garland with Thread networking.
 
-### Options Considered
+## Decision History
 
-#### Option A: ESP-IDF + ESP-Matter (C++)
+### Initial Decision: ESP-Matter (C++)
 
-- Official Espressif implementation
-- Production-ready, stable API
-- Full Thread support via OpenThread
-- Extensive documentation and examples
-- Active community and support
+Initially chose ESP-IDF + ESP-Matter because rs-matter lacked Thread transport.
 
-#### Option B: rs-matter (Rust)
+### Updated Decision: rs-matter (Rust) + Custom Glue
 
-- Pure Rust, `no_std`, `no_alloc`, async-first
-- Memory safety guarantees
-- Experimental status, unstable API
-- **Critical: Thread transport NOT implemented**
-- Would require custom integration with esp-rs/openthread
+After deeper research (see `../research-rust-matter-thread.md`), discovered that:
 
-## Research Findings
+1. **esp-openthread** provides working Thread MTD support
+2. **rs-matter** has modular transport layer
+3. **Missing piece** is just glue code (~100-500 lines)
 
-### rs-matter Thread Support Investigation
+## Final Decision
 
-Searched rs-matter repository and documentation:
-- Supports: WiFi, Ethernet, BLE for commissioning
-- **Does NOT support:** Thread/OpenThread/802.15.4 transport
-- Related projects exist ([esp-rs/openthread](https://github.com/esp-rs/openthread), [esp-ieee802154](https://github.com/esp-rs/esp-ieee802154)) but not integrated
+**Use rs-matter (Rust) with custom Thread transport glue**
 
-### Quote from rs-matter README:
+### Stack
 
-> "A pure-Rust, no_std, no-alloc, async-first implementation of the Matter protocol"
-
-Transport protocols mentioned: Ethernet, WiFi, custom IP network, BLE GATT.
-**Thread conspicuously absent.**
-
-## Decision
-
-**Choose ESP-IDF + ESP-Matter (C++)**
+```
+rs-matter (Matter protocol)
+        ↓
+thread-transport (custom glue)
+        ↓
+esp-openthread (Thread MTD)
+        ↓
+esp-ieee802154 (802.15.4 radio)
+        ↓
+Embassy (async runtime)
+```
 
 ## Rationale
 
-1. **Thread is mandatory** — project requires Thread-only networking (no WiFi)
-2. **rs-matter lacks Thread** — would require significant custom work
-3. **Production readiness** — ESP-Matter is battle-tested
-4. **Time to market** — need working prototype quickly
+1. **MTD is sufficient** — garland is end device, doesn't need routing
+2. **Glue is tractable** — both sides ready, just need UDP adapter
+3. **Pure Rust benefits** — memory safety, modern async, no C++ footguns
+4. **Learning opportunity** — contribute to Rust embedded ecosystem
+
+## Risks
+
+| Risk | Mitigation |
+|------|------------|
+| Uncharted territory | Start with working esp-openthread examples |
+| rs-matter API changes | Pin to specific git commit |
+| Debugging complexity | Use defmt + probe-rs |
 
 ## Consequences
 
 ### Positive
-- Full Thread support out of the box
-- Stable, documented APIs
-- Can leverage existing examples
-- Community support available
+- Pure Rust, memory safe
+- Modern async code with Embassy
+- Could contribute glue back to community
+- No ESP-IDF/FreeRTOS dependency
 
 ### Negative
-- C++ instead of Rust (less memory safety)
-- Larger binary size compared to potential Rust solution
-- Vendor lock-in to Espressif toolchain
+- More upfront work (write glue code)
+- Less documentation
+- No vendor support
 
-## Future Considerations
+## References
 
-Revisit rs-matter when Thread transport is implemented. Monitor:
-- https://github.com/project-chip/rs-matter
-- https://github.com/esp-rs/openthread
+- [Research document](../research-rust-matter-thread.md)
+- [rs-matter](https://github.com/project-chip/rs-matter)
+- [esp-openthread](https://github.com/esp-rs/esp-openthread)
