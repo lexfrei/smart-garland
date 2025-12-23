@@ -4,6 +4,11 @@
 
 Smart garland with Thread/Matter support for ESP32-C6/H2.
 
+## Decision Records
+
+- [ADR-001: Matter SDK Selection](decisions/001-matter-sdk.md) — ESP-Matter (C++) chosen over rs-matter (Rust)
+- [ADR-002: Thread Configuration](decisions/002-thread-config.md) — Thread-only networking, no WiFi
+
 ## Hardware Decisions
 
 | Decision | Choice | Rationale |

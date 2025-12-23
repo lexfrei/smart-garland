@@ -5,6 +5,7 @@
 - **`./docs/` is the single source of truth** for all architectural decisions, research results, and technical specifications
 - All research findings MUST be documented in `./docs/` before implementation
 - Decisions and their rationale go to docs, not just code comments
+- **Auto-document research**: When gathering new technical information (web searches, API exploration, technology comparisons), write findings to `./docs/` immediately without asking for confirmation
 
 ## Project Structure
 
