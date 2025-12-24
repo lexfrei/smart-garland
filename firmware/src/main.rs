@@ -49,10 +49,12 @@ macro_rules! mk_static {
 }
 
 /// Memory for rs-matter-stack futures (bump allocator)
-const BUMP_SIZE: usize = 25000;
+/// ESP32 needs more memory for Matter-over-Thread with BLE commissioning
+const BUMP_SIZE: usize = 40000;
 
 /// Heap size for Matter stack + x509
-const HEAP_SIZE: usize = 100 * 1024;
+/// ESP32 has non-contiguous memory, needs larger heap
+const HEAP_SIZE: usize = 140 * 1024;
 
 /// Endpoint 1 for the light device
 const LIGHT_ENDPOINT_ID: u16 = 1;
