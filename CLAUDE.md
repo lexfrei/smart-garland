@@ -55,3 +55,9 @@ This project implements **custom Thread transport for rs-matter** — connecting
 - esp-openthread (Thread networking)
 
 This is the missing piece in the Rust ecosystem for Matter-over-Thread.
+
+## ESP Console Monitoring
+
+- **NEVER read espflash monitor output through Claude** — terminal is not interactive, breaks session
+- User runs `espflash flash --monitor` in their terminal and copies logs here
+- Flash command: `espflash flash --port /dev/cu.usbmodem2101 target/riscv32imac-unknown-none-elf/release/smart-garland`

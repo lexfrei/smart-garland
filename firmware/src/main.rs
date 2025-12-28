@@ -40,6 +40,14 @@ use crate::matter::{DEV_INFO, LightState};
 
 esp_bootloader_esp_idf::esp_app_desc!();
 
+/// Timestamp provider for esp-println logger (milliseconds since boot)
+#[unsafe(no_mangle)]
+pub extern "Rust" fn _esp_println_timestamp() -> u64 {
+    esp_hal::time::Instant::now()
+        .duration_since_epoch()
+        .as_millis()
+}
+
 /// Static cell macro for allocation
 macro_rules! mk_static {
     ($t:ty) => {{
@@ -177,15 +185,17 @@ async fn main(spawner: Spawner) {
     // Spawn LED control task
     spawner.spawn(led_control_task(light_state, channel)).unwrap();
 
-    // Run Matter stack with Thread + BLE commissioning
+    // Run Matter stack with Thread + BLE sequential (no coex - esp-radio limitation)
+    // BLE runs first for commissioning, then Thread takes over exclusively
+    let thread = EmbassyThread::new(
+        EspThreadDriver::new(&init, peripherals.IEEE802154, peripherals.BT),
+        ieee_eui64,
+        persist.store(),
+        stack,
+    );
+
     let matter = pin!(stack.run(
-        // Thread driver with BLE support
-        EmbassyThread::new(
-            EspThreadDriver::new(&init, peripherals.IEEE802154, peripherals.BT),
-            ieee_eui64,
-            persist.store(),
-            stack,
-        ),
+        thread,
         // Persister
         &persist,
         // Handler chain

@@ -10,7 +10,7 @@ description = "Matter-over-Thread smart garland for ESP32-C6/H2"
 # ESP32-C6 HAL
 esp-hal = { version = "1", features = ["esp32c6", "unstable", "log-04"] }
 esp-rtos = { version = "0.2", features = ["esp32c6", "embassy", "esp-radio"] }
-esp-println = { version = "0.14", features = ["esp32c6", "log-04"] }
+esp-println = { version = "0.14", features = ["esp32c6", "log-04", "timestamp"] }
 esp-backtrace = { version = "0.16", features = ["esp32c6", "panic-handler", "println"] }
 esp-bootloader-esp-idf = { version = "0.4", features = ["esp32c6"] }
 esp-alloc = "0.9"
@@ -18,8 +18,8 @@ esp-alloc = "0.9"
 # Radio: IEEE 802.15.4 (Thread) + BLE (commissioning)
 esp-radio = { version = "0.17", features = ["esp32c6", "unstable", "ieee802154", "ble", "coex"] }
 
-# Matter + Thread + BLE stack
-rs-matter-embassy = { git = "https://github.com/sysgrok/rs-matter-embassy", branch = "master", features = ["esp", "log", "openthread"] }
+# Matter + Thread + BLE stack (local fork with SRP fix)
+rs-matter-embassy = { path = "/Users/lex/git/github.com/lexfrei/rs-matter-embassy/rs-matter-embassy", features = ["esp", "log", "openthread"] }
 
 # Embassy async runtime (versions must match rs-matter-embassy)
 embassy-executor = { version = "0.9", features = ["arch-riscv32"] }
@@ -43,7 +43,8 @@ lto = "fat"
 opt-level = 1
 
 [patch.crates-io]
-# Required by rs-matter-embassy - use git versions
-rs-matter = { git = "https://github.com/sysgrok/rs-matter", branch = "next" }
+# Required by rs-matter-embassy - use fork with connected status fix
+rs-matter = { git = "https://github.com/lexfrei/rs-matter", branch = "fix/networks-connected-status" }
 rs-matter-stack = { git = "https://github.com/ivmarkov/rs-matter-stack.git", branch = "next" }
-openthread = { git = "https://github.com/sysgrok/openthread.git" }
+openthread = { path = "/Users/lex/git/github.com/lexfrei/openthread/openthread" }
+openthread-sys = { path = "/Users/lex/git/github.com/lexfrei/openthread/openthread-sys" }
