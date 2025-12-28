@@ -4,22 +4,45 @@
 
 set -euo pipefail
 
-CONTAINER_IMAGE="espressif/esp-matter"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONTAINER_NAME="smart-garland-dev"
 WORKSPACE="/workspace"
 
-# Find running DevContainer
+# Find or start container
 find_container() {
-    podman ps --filter "ancestor=${CONTAINER_IMAGE}" --format "{{.Names}}" | head -n1
+    local container
+    container=$(podman ps --filter "name=${CONTAINER_NAME}" --format "{{.Names}}" | head -n1)
+
+    if [[ -z "$container" ]]; then
+        # Try to find any container from compose
+        container=$(podman ps --filter "label=com.docker.compose.project=smart-garland" --format "{{.Names}}" | head -n1)
+    fi
+
+    echo "$container"
+}
+
+# Start container if not running
+start_container() {
+    local container
+    container=$(find_container)
+
+    if [[ -z "$container" ]]; then
+        echo "Starting development container..."
+        cd "$PROJECT_DIR" && podman-compose up -d
+        container=$(find_container)
+    fi
+
+    echo "$container"
 }
 
 # Run command in container
 run_in_container() {
     local container
-    container=$(find_container)
+    container=$(start_container)
 
     if [[ -z "$container" ]]; then
-        echo "Error: DevContainer not running"
-        echo "Start it via VS Code: Reopen in Container"
+        echo "Error: Failed to start container"
+        echo "Try: podman-compose up -d"
         exit 1
     fi
 
@@ -93,27 +116,38 @@ case "${1:-help}" in
         espflash flash "$binary" --port "$port" --monitor
         ;;
     shell)
-        echo "Opening shell in DevContainer..."
-        container=$(find_container)
-        if [[ -z "$container" ]]; then
-            echo "Error: DevContainer not running"
-            exit 1
-        fi
+        echo "Opening shell in container..."
+        container=$(start_container)
         podman exec -it "$container" bash
+        ;;
+    up)
+        echo "Starting container..."
+        cd "$PROJECT_DIR" && podman-compose up -d
+        ;;
+    down)
+        echo "Stopping container..."
+        cd "$PROJECT_DIR" && podman-compose down
         ;;
     status)
         container=$(find_container)
         if [[ -n "$container" ]]; then
-            echo "DevContainer running: ${container}"
+            echo "Container running: ${container}"
             podman exec "$container" bash -c "source /opt/esp/idf/export.sh > /dev/null 2>&1 && echo IDF version: \$(idf.py --version)"
         else
-            echo "DevContainer not running"
+            echo "Container not running"
+            echo "Start with: ./scripts/dev.sh up"
         fi
         ;;
     help|--help|-h|*)
-        echo "ESP-Matter DevContainer Helper"
+        echo "ESP-Matter Container Helper"
         echo ""
         echo "Usage: ./scripts/dev.sh <command>"
+        echo ""
+        echo "Container management:"
+        echo "  up            Start container (podman-compose up)"
+        echo "  down          Stop container (podman-compose down)"
+        echo "  status        Check container status"
+        echo "  shell         Open bash in container"
         echo ""
         echo "Build commands (run in container):"
         echo "  build         Build the project"
@@ -128,17 +162,13 @@ case "${1:-help}" in
         echo "  monitor       Open serial monitor"
         echo "  flash-monitor Flash and open monitor"
         echo ""
-        echo "Other:"
-        echo "  shell         Open bash in container"
-        echo "  status        Check if container is running"
-        echo ""
         echo "Environment:"
         echo "  ESP_PORT      USB port (default: /dev/cu.usbmodem*)"
         echo ""
         echo "Examples:"
+        echo "  ./scripts/dev.sh up"
         echo "  ./scripts/dev.sh set-target esp32c6"
         echo "  ./scripts/dev.sh build"
         echo "  ./scripts/dev.sh flash-monitor"
-        echo "  ESP_PORT=/dev/cu.usbmodem2101 ./scripts/dev.sh flash"
         ;;
 esac
