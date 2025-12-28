@@ -99,10 +99,11 @@ smart-garland/
 │   ├── idf_component.yml   # Dependencies (led_strip)
 │   └── CMakeLists.txt
 ├── scripts/
-│   └── dev.sh              # Container helper script
-├── CMakeLists.txt          # Root build config
+│   └── dev.sh              # Container helper (compose workflow)
+├── CMakeLists.txt          # ESP-IDF build config
+├── Makefile                # Main build interface
 ├── Containerfile           # Build environment image
-├── compose.yaml            # Container orchestration
+├── compose.yaml            # Container orchestration (dev)
 ├── sdkconfig.defaults      # Common ESP-IDF config
 ├── sdkconfig.defaults.esp32c6  # C6-specific (future)
 ├── sdkconfig.defaults.esp32h2  # H2-specific (future)
@@ -112,13 +113,17 @@ smart-garland/
 ## Build & Flash
 
 ```bash
-# Start container and build
-./scripts/dev.sh up
-./scripts/dev.sh set-target esp32c6
-./scripts/dev.sh build
+# Build (runs in container, outputs build/smart-garland.bin)
+make
 
-# Flash from host (USB not available in container)
-./scripts/dev.sh flash-monitor
+# Flash and monitor (runs on host)
+make flash-monitor
+
+# Build for H2 instead of C6
+make TARGET=esp32h2
+
+# Interactive shell for debugging
+make shell
 ```
 
 ## Modular Architecture
