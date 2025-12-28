@@ -96,7 +96,7 @@ For interactive development with persistent container:
 
 ## Hardware
 
-- **Development**: ESP32-C6-DevKitC-1 (Thread + WiFi + BLE)
+- **Development**: ESP32-C6-WROOM-1 (Thread + WiFi + BLE)
 - **Production**: ESP32-H2 (Thread + BLE, lower power)
 - **LED**: WS2812B via RMT
   - MVP: GPIO8 (onboard RGB LED on C6 devkit)

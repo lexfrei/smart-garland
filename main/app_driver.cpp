@@ -13,7 +13,7 @@
 static const char *TAG = "app_driver";
 
 // Hardware configuration
-#define LED_STRIP_GPIO      8       // Onboard RGB LED on ESP32-C6-DevKitC-1
+#define LED_STRIP_GPIO      8       // Onboard RGB LED on ESP32-C6-WROOM-1
 #define LED_STRIP_NUM_LEDS  1       // MVP: single LED
 #define LED_STRIP_RMT_RES   10000000 // 10MHz resolution
 
