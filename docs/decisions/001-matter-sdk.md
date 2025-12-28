@@ -1,6 +1,6 @@
 # ADR-001: Matter SDK Selection
 
-**Status:** Accepted (Updated)
+**Status:** Superseded by ADR-003
 **Date:** 2024-12-23
 **Updated:** 2024-12-23
 

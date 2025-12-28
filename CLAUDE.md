@@ -10,48 +10,94 @@
 ## Decision Records (ADRs)
 
 - **Index**: Maintain `docs/decisions/README.md` with list of all ADRs
-- **New decisions**: Create new ADR file (e.g., `003-new-topic.md`)
+- **New decisions**: Create new ADR file (e.g., `004-new-topic.md`)
 - **Changed decisions**: Mark old ADR as `Status: Superseded by ADR-XXX`, create new ADR with updated decision
 - **Never delete**: Old ADRs stay for history, just mark as outdated/superseded
 - **Format**: `docs/decisions/NNN-short-name.md`
 
 ## Project Structure
 
-- `docs/` — documentation and decisions (ADRs, research)
-- `firmware/` — Rust Embassy project
+```
+smart-garland/
+├── .devcontainer/           # DevContainer for isolated builds
+├── docs/                    # Documentation and ADRs
+├── main/                    # Application source code
+│   ├── app_main.cpp        # Entry point
+│   ├── app_driver.cpp/h    # LED driver abstraction
+│   ├── CMakeLists.txt      # Component build config
+│   └── idf_component.yml   # ESP Component Registry deps
+├── CMakeLists.txt          # Project root CMake
+├── sdkconfig.defaults      # Default ESP-IDF config
+└── partitions.csv          # Flash partition table
+```
 
 ## Language & Build
 
-- **Language**: Rust (no_std, async)
-- **Runtime**: Embassy
-- **Build**: `cargo build --release`
-- **Flash**: `espflash flash --monitor`
-- **Target**: `riscv32imac-unknown-none-elf` (ESP32-C6/H2)
+- **Language**: C++ (ESP-IDF framework)
+- **SDK**: ESP-Matter (official Espressif Matter SDK)
+- **Build environment**: DevContainer with `espressif/esp-matter` image
+- **Target chips**: ESP32-C6 (dev), ESP32-H2 (production)
 
-## Key Dependencies
+### Build Commands (inside DevContainer)
 
-- `embassy-executor` — async runtime
-- `esp-hal` — hardware abstraction
-- `esp-openthread` — Thread networking (MTD)
-- `rs-matter` — Matter protocol
+```bash
+# Source environment
+source $IDF_PATH/export.sh
+source $ESP_MATTER_PATH/export.sh
+
+# Set target
+idf.py set-target esp32c6
+
+# Build
+idf.py build
+
+# Flash (from host, not container on macOS)
+espflash flash build/smart-garland.bin --port /dev/cu.usbmodem2101
+```
+
+### macOS Note
+
+Docker/Podman on macOS doesn't support USB passthrough. Build in container, flash from host.
 
 ## Hardware
 
-- **Development**: ESP32-C6 (Thread only, WiFi disabled)
-- **Production**: ESP32-H2 (Thread only)
-- **LED**: WS2812B (MVP: single onboard LED, GPIO8)
-- **Port**: `/dev/cu.usbmodem101` (native USB)
+- **Development**: ESP32-C6-DevKitC-1 (Thread + WiFi + BLE)
+- **Production**: ESP32-H2 (Thread + BLE, lower power)
+- **LED**: WS2812B via RMT
+  - MVP: GPIO8 (onboard RGB LED on C6 devkit)
+  - Production: External strip (configurable pin/count)
+- **Port**: `/dev/cu.usbmodem2101` (native USB)
+
+## Modular Architecture
+
+Project is designed for multiple targets and garland types:
+
+**Targets:**
+- `esp32c6` — development, has WiFi for debugging
+- `esp32h2` — production, Thread-only, lower power
+
+**Garland types** (future):
+- Single LED (MVP/testing)
+- WS2812B strip (N addressable LEDs)
+- SK6812 RGBW strip
+- Simple GPIO LEDs
 
 ## Protocol Stack
 
-- Thread (802.15.4) for networking — MTD mode
 - Matter for smart home integration
+- Thread (802.15.4) for networking — MTD mode
+- BLE for commissioning
 - Device Type: Extended Color Light (0x010D)
 
-## The Glue
+## Key Dependencies
 
-This project implements **custom Thread transport for rs-matter** — connecting:
-- rs-matter (Matter protocol)
-- esp-openthread (Thread networking)
+- `esp-matter` — Espressif's Matter SDK
+- `chip` — Project CHIP (Matter core)
+- `led_strip` — ESP Component Registry LED driver
+- `openthread` — Thread stack (via esp-matter)
 
-This is the missing piece in the Rust ecosystem for Matter-over-Thread.
+## Historical Note
+
+Previous Rust implementation (rs-matter + Embassy) is preserved in `rust-experimental` branch.
+Migrated to ESP-Matter due to radio layer bugs in Rust OpenThread bindings.
+See ADR-003 for details.
