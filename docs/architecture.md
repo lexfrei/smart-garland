@@ -1,67 +1,64 @@
-# Architecture Decisions
+# Architecture
 
 ## Overview
 
 Smart garland with Thread/Matter support for ESP32-C6/H2.
 
-**Language**: Pure Rust (no_std, async)
+**SDK**: ESP-Matter (C++) — official Espressif implementation
+**Build**: ESP-IDF v5.2.1 via DevContainer
 
 ## Decision Records
 
-- [ADR-001: Matter SDK Selection](decisions/001-matter-sdk.md) — rs-matter (Rust) with custom Thread glue
+- [ADR-003: ESP-Matter Migration](decisions/003-esp-matter-migration.md) — current approach
 - [ADR-002: Thread Configuration](decisions/002-thread-config.md) — Thread-only networking, MTD mode
+- ~~[ADR-001: Matter SDK Selection](decisions/001-matter-sdk.md)~~ — superseded by ADR-003
 
 ## Hardware Decisions
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Dev chip | ESP32-C6 | WiFi+Thread, better tooling, more RAM |
-| Prod chip | ESP32-H2 | Thread-only, lower power, cheaper |
+| Dev chip | ESP32-C6 | WiFi+Thread+BLE, better tooling, more RAM |
+| Prod chip | ESP32-H2 | Thread+BLE only, lower power, cheaper |
 | LED protocol | WS2812B (MVP) | Single-wire, ubiquitous, cheap |
 | LED backend | RMT peripheral | Hardware timing, CPU-free updates |
 
-## Software Stack (Rust)
+## Software Stack (ESP-Matter)
 
 | Layer | Technology | Notes |
 |-------|------------|-------|
-| Runtime | Embassy | Async, no FreeRTOS |
-| Matter | rs-matter | Pure Rust Matter implementation |
-| Thread | esp-openthread | Rust bindings for OpenThread |
-| Radio | esp-ieee802154 | 802.15.4 driver (pure Rust) |
-| HAL | esp-hal | Hardware abstraction |
-| Build | Cargo + espflash | Standard Rust tooling |
+| Runtime | FreeRTOS | ESP-IDF default |
+| Matter | ESP-Matter SDK | Official Espressif, production-ready |
+| Thread | OpenThread | Integrated in ESP-IDF |
+| Radio | esp-ieee802154 | 802.15.4 driver |
+| HAL | ESP-IDF drivers | led_strip component for WS2812B |
+| Build | CMake + idf.py | Standard ESP-IDF tooling |
 
 ## Component Architecture
 
 ```
 ┌─────────────────────────────────────────────────┐
 │              Application Code                    │
-│  (light control, effects, LED driver)           │
+│  (app_main.cpp, app_driver.cpp)                 │
 └─────────────────────┬───────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────┐
-│              rs-matter                           │
-│  (On/Off, Level, Color, Identify clusters)      │
+│              ESP-Matter SDK                      │
+│  (On/Off, Level, Color clusters, endpoints)     │
 └─────────────────────┬───────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────┐
-│         thread-transport (CUSTOM GLUE)          │
-│  (UDP adapter between rs-matter and OpenThread) │
+│              ESP-IDF Thread Stack               │
+│  (OpenThread MTD, IPv6, 6LoWPAN)               │
 └─────────────────────┬───────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────┐
-│              esp-openthread                      │
-│  (Thread MTD, IPv6 networking)                  │
+│              802.15.4 Radio                     │
+│  (Thread networking)                            │
 └─────────────────────┬───────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────┐
-│              esp-ieee802154                      │
-│  (802.15.4 radio driver)                        │
-└─────────────────────┬───────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────┐
-│              Embassy                             │
-│  (async executor, timers, HAL)                  │
+│              FreeRTOS                           │
+│  (tasks, timers, drivers)                       │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -91,47 +88,77 @@ Smart garland with Thread/Matter support for ESP32-C6/H2.
 - Requires Thread Border Router (Apple TV, HomePod, Google Nest Hub)
 - BLE for commissioning
 
+## Project Structure
+
+```
+smart-garland/
+├── .devcontainer/          # Docker build environment
+│   ├── Dockerfile
+│   └── devcontainer.json
+├── main/                   # Application code
+│   ├── app_main.cpp        # Entry point, Matter setup
+│   ├── app_driver.cpp      # LED control implementation
+│   ├── app_driver.h        # LED driver interface
+│   ├── idf_component.yml   # Dependencies (led_strip)
+│   └── CMakeLists.txt
+├── CMakeLists.txt          # Root build config
+├── sdkconfig.defaults      # Common ESP-IDF config
+├── sdkconfig.defaults.esp32c6  # C6-specific (future)
+├── sdkconfig.defaults.esp32h2  # H2-specific (future)
+└── partitions.csv          # Flash layout
+```
+
+## Build & Flash
+
+```bash
+# In DevContainer
+idf.py set-target esp32c6
+idf.py build
+
+# On host (macOS - no USB passthrough in Docker)
+espflash flash build/smart-garland.bin --port /dev/cu.usbmodem2101
+```
+
+## Modular Architecture
+
+**Targets** (compile-time):
+- ESP32-C6 (development)
+- ESP32-H2 (production)
+
+**Garland variants** (runtime, future):
+- Single LED (MVP/testing)
+- WS2812B strip (N LEDs)
+- SK6812 RGBW strip
+- Individual GPIO LEDs
+
 ## Implementation Phases
 
-### Phase 1: Thread Networking MVP
-- Setup Rust Embassy project for ESP32-C6
-- Get esp-openthread running (MTD mode)
-- Join Thread network, verify connectivity
+### Phase 1: MVP ✓
+- ESP-Matter project structure
+- DevContainer for builds
+- Single LED control
 
-### Phase 2: Thread Transport Glue (KEY WORK)
-- Study rs-matter transport trait requirements
-- Implement ThreadTransport using esp-openthread UDP
-- Handle IPv6 multicast for Matter discovery
-- Test with Matter controller
+### Phase 2: Commissioning
+- BLE pairing flow
+- Join Thread network
+- Test with Apple Home / Google Home
 
-### Phase 3: Matter Light Device
-- Implement Extended Color Light endpoint
-- On/Off, Level, Color Control clusters
-- BLE commissioning flow
+### Phase 3: LED Strip
+- WS2812B strip support (N LEDs)
+- Color gradients
+- Brightness control per LED
 
-### Phase 4: LED Driver
-- WS2812B driver using esp-hal RMT
-- HSV color support
-- Brightness control
+### Phase 4: Effects
+- Rainbow, fade, etc.
+- Scenes cluster for presets
+- Identify blink pattern
 
-### Phase 5: Polish
-- Effects engine (rainbow, fade, etc.)
-- Scenes cluster for effect presets
+### Phase 5: Production
 - ESP32-H2 support
 - Power optimization
+- Certification prep
 
-## Known Issues
+## Historical Reference
 
-| Issue | Mitigation |
-|-------|------------|
-| rs-matter API unstable | Pin to specific git commit |
-| Thread glue missing | Write custom ThreadTransport (~100-500 lines) |
-| BLE commissioning | May need esp-wifi crate for BLE |
-| Debugging async | Use defmt + probe-rs |
-
-## References
-
-- [Research: Rust for Matter/Thread](research-rust-matter-thread.md)
-- [rs-matter](https://github.com/project-chip/rs-matter)
-- [esp-openthread](https://github.com/esp-rs/esp-openthread)
-- [Embassy](https://embassy.dev/)
+Rust implementation (rs-matter + Embassy) archived in `rust-experimental` branch.
+See [research-rust-matter-thread.md](research-rust-matter-thread.md) for original research.
