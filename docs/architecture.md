@@ -92,16 +92,17 @@ Smart garland with Thread/Matter support for ESP32-C6/H2.
 
 ```
 smart-garland/
-├── .devcontainer/          # Docker build environment
-│   ├── Dockerfile
-│   └── devcontainer.json
 ├── main/                   # Application code
 │   ├── app_main.cpp        # Entry point, Matter setup
 │   ├── app_driver.cpp      # LED control implementation
 │   ├── app_driver.h        # LED driver interface
 │   ├── idf_component.yml   # Dependencies (led_strip)
 │   └── CMakeLists.txt
+├── scripts/
+│   └── dev.sh              # Container helper script
 ├── CMakeLists.txt          # Root build config
+├── Containerfile           # Build environment image
+├── compose.yaml            # Container orchestration
 ├── sdkconfig.defaults      # Common ESP-IDF config
 ├── sdkconfig.defaults.esp32c6  # C6-specific (future)
 ├── sdkconfig.defaults.esp32h2  # H2-specific (future)
@@ -111,12 +112,13 @@ smart-garland/
 ## Build & Flash
 
 ```bash
-# In DevContainer
-idf.py set-target esp32c6
-idf.py build
+# Start container and build
+./scripts/dev.sh up
+./scripts/dev.sh set-target esp32c6
+./scripts/dev.sh build
 
-# On host (macOS - no USB passthrough in Docker)
-espflash flash build/smart-garland.bin --port /dev/cu.usbmodem2101
+# Flash from host (USB not available in container)
+./scripts/dev.sh flash-monitor
 ```
 
 ## Modular Architecture

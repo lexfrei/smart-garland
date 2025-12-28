@@ -45,10 +45,12 @@ smart-garland/
 │   ├── app_main.cpp        # Entry point
 │   ├── app_driver.cpp/h    # LED abstraction
 │   └── idf_component.yml   # Dependencies
+├── scripts/dev.sh           # Container helper
+├── Containerfile            # Build environment
+├── compose.yaml             # Container orchestration
 ├── sdkconfig.defaults       # Common config
 ├── sdkconfig.defaults.esp32c6  # C6-specific (future)
-├── sdkconfig.defaults.esp32h2  # H2-specific (future)
-└── .devcontainer/           # Isolated build environment
+└── sdkconfig.defaults.esp32h2  # H2-specific (future)
 ```
 
 **Targets:**
@@ -67,7 +69,7 @@ smart-garland/
 - Working device in hours, not weeks
 - Production path with certification support
 - Official vendor support
-- DevContainer for reproducible builds
+- Containerized builds for reproducibility
 
 ### Negative
 - Larger footprint
