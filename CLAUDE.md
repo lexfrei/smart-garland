@@ -75,6 +75,14 @@ make fullclean   # includes managed_components
 3. Output: `build/smart-garland.bin`
 4. `make flash` uses `espflash` on the host (USB not available in container on macOS)
 
+### Container Image Protection
+
+The image is labeled with `keep=true` to survive cleanup. Safe prune command:
+
+```bash
+podman system prune --filter "label!=keep"
+```
+
 ### Alternative: Compose Workflow
 
 For interactive development with persistent container:

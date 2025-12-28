@@ -1,5 +1,8 @@
 FROM docker.io/espressif/esp-matter:latest_idf_v5.2.1
 
+LABEL keep="true"
+LABEL project="smart-garland"
+
 ENV IDF_PATH=/opt/esp/idf
 ENV ESP_MATTER_PATH=/opt/esp/esp-matter
 
