@@ -16,11 +16,10 @@ esp-bootloader-esp-idf = { version = "0.4", features = ["esp32c6"] }
 esp-alloc = "0.9"
 
 # Radio: IEEE 802.15.4 (Thread) + BLE (commissioning)
-esp-radio = { version = "0.17", features = ["esp32c6", "unstable", "ieee802154", "ble"] }
+esp-radio = { version = "0.17", features = ["esp32c6", "unstable", "ieee802154", "ble", "coex"] }
 
-# Matter + Thread + BLE stack (fork with rx_on_when_idle fix)
-# PR: https://github.com/sysgrok/rs-matter-embassy/pull/30
-rs-matter-embassy = { git = "https://github.com/lexfrei/rs-matter-embassy", branch = "feat/enable-rx-on-when-idle", features = ["esp", "log", "openthread"] }
+# Matter + Thread + BLE stack
+rs-matter-embassy = { git = "https://github.com/sysgrok/rs-matter-embassy", branch = "master", features = ["esp", "log", "openthread"] }
 
 # Embassy async runtime (versions must match rs-matter-embassy)
 embassy-executor = { version = "0.9", features = ["arch-riscv32"] }
@@ -47,6 +46,4 @@ opt-level = 1
 # Required by rs-matter-embassy - use git versions
 rs-matter = { git = "https://github.com/sysgrok/rs-matter", branch = "next" }
 rs-matter-stack = { git = "https://github.com/ivmarkov/rs-matter-stack.git", branch = "next" }
-# Fork with set_link_mode for rx_on_when_idle support
-# PR: https://github.com/esp-rs/openthread/pull/50
-openthread = { git = "https://github.com/lexfrei/openthread", branch = "feat/add-set-link-mode" }
+openthread = { git = "https://github.com/sysgrok/openthread.git" }
