@@ -19,13 +19,16 @@
 
 ```
 smart-garland/
-├── .devcontainer/           # DevContainer for isolated builds
 ├── docs/                    # Documentation and ADRs
 ├── main/                    # Application source code
-│   ├── app_main.cpp        # Entry point
+│   ├── app_main.cpp        # Entry point, Matter endpoint
 │   ├── app_driver.cpp/h    # LED driver abstraction
 │   ├── CMakeLists.txt      # Component build config
 │   └── idf_component.yml   # ESP Component Registry deps
+├── scripts/dev.sh          # Container helper (compose workflow)
+├── Makefile                # Main build interface
+├── Containerfile           # Build environment image
+├── compose.yaml            # Container orchestration (dev)
 ├── CMakeLists.txt          # Project root CMake
 ├── sdkconfig.defaults      # Default ESP-IDF config
 └── partitions.csv          # Flash partition table
@@ -35,29 +38,53 @@ smart-garland/
 
 - **Language**: C++ (ESP-IDF framework)
 - **SDK**: ESP-Matter (official Espressif Matter SDK)
-- **Build environment**: DevContainer with `espressif/esp-matter` image
+- **Build environment**: Containerized (Podman + ESP-Matter image)
 - **Target chips**: ESP32-C6 (dev), ESP32-H2 (production)
 
-### Build Commands (inside DevContainer)
+### Build Commands
 
 ```bash
-# Source environment
-source $IDF_PATH/export.sh
-source $ESP_MATTER_PATH/export.sh
+# Build firmware (runs in container)
+make
 
-# Set target
-idf.py set-target esp32c6
+# Build for specific target
+make TARGET=esp32c6   # default
+make TARGET=esp32h2   # production
 
-# Build
-idf.py build
+# Flash and monitor (runs on host)
+make flash-monitor
 
-# Flash (from host, not container on macOS)
-espflash flash build/smart-garland.bin --port /dev/cu.usbmodem2101
+# Flash with specific port
+make PORT=/dev/cu.usbmodem2101 flash
+
+# Interactive shell in container
+make shell
+
+# ESP-IDF menuconfig
+make menuconfig
+
+# Clean
+make clean
+make fullclean   # includes managed_components
 ```
 
-### macOS Note
+### How It Works
 
-Docker/Podman on macOS doesn't support USB passthrough. Build in container, flash from host.
+1. `make` builds the container image from `Containerfile` (based on `espressif/esp-matter`)
+2. Runs `idf.py build` inside the container with workspace mounted
+3. Output: `build/smart-garland.bin`
+4. `make flash` uses `espflash` on the host (USB not available in container on macOS)
+
+### Alternative: Compose Workflow
+
+For interactive development with persistent container:
+
+```bash
+./scripts/dev.sh up        # Start container
+./scripts/dev.sh build     # Build
+./scripts/dev.sh shell     # Interactive shell
+./scripts/dev.sh down      # Stop container
+```
 
 ## Hardware
 
@@ -66,7 +93,7 @@ Docker/Podman on macOS doesn't support USB passthrough. Build in container, flas
 - **LED**: WS2812B via RMT
   - MVP: GPIO8 (onboard RGB LED on C6 devkit)
   - Production: External strip (configurable pin/count)
-- **Port**: `/dev/cu.usbmodem2101` (native USB)
+- **Port**: `/dev/cu.usbmodem*` (native USB, auto-detected)
 
 ## Modular Architecture
 
