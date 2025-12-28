@@ -1,0 +1,26 @@
+{
+  "name": "ESP-Matter Development",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "espressif.esp-idf-extension",
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools"
+      ],
+      "settings": {
+        "idf.espIdfPath": "/opt/esp/idf",
+        "idf.toolsPath": "/root/.espressif",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ],
+  "workspaceFolder": "/workspace",
+  "postCreateCommand": "echo 'ESP-Matter DevContainer ready! Run: source $IDF_PATH/export.sh && source $ESP_MATTER_PATH/export.sh'",
+  "remoteUser": "root"
+}
