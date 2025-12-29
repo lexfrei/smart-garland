@@ -9,6 +9,11 @@ PORT ?= $(shell ls /dev/cu.usbmodem* 2>/dev/null | head -n1)
 BUILD_DIR := build
 BINARY := $(BUILD_DIR)/smart-garland.bin
 
+# Container run options (workspace includes build/ directory)
+RUN_OPTS := --rm --security-opt label=disable \
+	--volume $(CURDIR):/workspace \
+	--workdir /workspace
+
 .PHONY: all build flash monitor flash-monitor clean fullclean container shell menuconfig size help
 
 all: build
@@ -21,14 +26,10 @@ container:
 # Build firmware (runs in container)
 build: container
 	@echo "Building for $(TARGET)..."
-	$(CONTAINER_RUNTIME) run --rm \
-		--volume .:/workspace:Z \
-		--workdir /workspace \
-		$(CONTAINER_IMAGE) \
-		bash -c "source /opt/esp/idf/export.sh > /dev/null 2>&1 && \
-		         source /opt/esp/esp-matter/export.sh > /dev/null 2>&1 && \
-		         idf.py set-target $(TARGET) && \
-		         idf.py build"
+	$(CONTAINER_RUNTIME) run $(RUN_OPTS) $(CONTAINER_IMAGE) \
+		idf.py -C /workspace set-target $(TARGET)
+	@time $(CONTAINER_RUNTIME) run $(RUN_OPTS) $(CONTAINER_IMAGE) \
+		idf.py -C /workspace build
 	@echo "Build complete: $(BINARY)"
 
 # Flash to device (runs on host)
@@ -54,39 +55,23 @@ endif
 
 # Interactive shell in container
 shell: container
-	$(CONTAINER_RUNTIME) run --rm -it \
-		--volume .:/workspace:Z \
-		--workdir /workspace \
-		$(CONTAINER_IMAGE) \
-		bash
+	$(CONTAINER_RUNTIME) run $(RUN_OPTS) -it $(CONTAINER_IMAGE) bash
 
 # Interactive menuconfig
 menuconfig: container
-	$(CONTAINER_RUNTIME) run --rm -it \
-		--volume .:/workspace:Z \
-		--workdir /workspace \
-		$(CONTAINER_IMAGE) \
-		bash -c "source /opt/esp/idf/export.sh > /dev/null 2>&1 && \
-		         source /opt/esp/esp-matter/export.sh > /dev/null 2>&1 && \
-		         idf.py menuconfig"
+	$(CONTAINER_RUNTIME) run $(RUN_OPTS) -it $(CONTAINER_IMAGE) idf.py -C /workspace menuconfig
 
 # Show binary size
 size: container
-	$(CONTAINER_RUNTIME) run --rm \
-		--volume .:/workspace:Z \
-		--workdir /workspace \
-		$(CONTAINER_IMAGE) \
-		bash -c "source /opt/esp/idf/export.sh > /dev/null 2>&1 && \
-		         source /opt/esp/esp-matter/export.sh > /dev/null 2>&1 && \
-		         idf.py size"
+	$(CONTAINER_RUNTIME) run $(RUN_OPTS) $(CONTAINER_IMAGE) idf.py -C /workspace size
 
 # Clean build artifacts
 clean:
 	rm -rf $(BUILD_DIR) sdkconfig
 
-# Full clean including managed components
+# Full clean including managed components and dependencies
 fullclean: clean
-	rm -rf managed_components
+	rm -rf managed_components dependencies.lock
 
 help:
 	@echo "Smart Garland Build System"

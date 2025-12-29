@@ -1,4 +1,11 @@
-# Rust
+# Build artifacts
+build/
+sdkconfig
+sdkconfig.old
+managed_components/
+dependencies.lock
+
+# Rust (legacy)
 target/
 Cargo.lock
 

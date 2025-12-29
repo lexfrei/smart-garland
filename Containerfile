@@ -1,12 +1,6 @@
-FROM docker.io/espressif/esp-matter:latest_idf_v5.2.1
+FROM docker.io/espressif/esp-matter:release-v1.5_idf_v5.4.1
 
 LABEL keep="true"
 LABEL project="smart-garland"
-
-ENV IDF_PATH=/opt/esp/idf
-ENV ESP_MATTER_PATH=/opt/esp/esp-matter
-
-RUN echo 'source $IDF_PATH/export.sh > /dev/null 2>&1' >> ~/.bashrc && \
-    echo 'source $ESP_MATTER_PATH/export.sh > /dev/null 2>&1' >> ~/.bashrc
 
 WORKDIR /workspace

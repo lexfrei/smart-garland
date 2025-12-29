@@ -15,6 +15,29 @@
 
 #include <app_reset.h>
 
+#if CHIP_DEVICE_CONFIG_ENABLE_THREAD
+#include <esp_openthread_types.h>
+#include <platform/ESP32/OpenthreadLauncher.h>
+
+// Default OpenThread platform configuration macros (from esp-matter examples)
+#define ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG()   \
+    {                                           \
+        .radio_mode = RADIO_MODE_NATIVE,        \
+    }
+
+#define ESP_OPENTHREAD_DEFAULT_HOST_CONFIG()    \
+    {                                           \
+        .host_connection_mode = HOST_CONNECTION_MODE_NONE, \
+    }
+
+#define ESP_OPENTHREAD_DEFAULT_PORT_CONFIG()    \
+    {                                           \
+        .storage_partition_name = "nvs",        \
+        .netif_queue_size = 10,                 \
+        .task_queue_size = 10,                  \
+    }
+#endif
+
 #include "app_driver.h"
 
 static const char *TAG = "smart-garland";
@@ -80,13 +103,9 @@ extern "C" void app_main()
     // Create Extended Color Light endpoint
     extended_color_light::config_t light_config;
     light_config.on_off.on_off = false;
-    light_config.on_off.lighting.start_up_on_off = nullptr;
     light_config.level_control.current_level = 128;
-    light_config.level_control.lighting.start_up_current_level = nullptr;
     light_config.color_control.color_mode = 0;  // CurrentHueAndCurrentSaturation
     light_config.color_control.enhanced_color_mode = 0;
-    light_config.color_control.hue_saturation.current_hue = 0;
-    light_config.color_control.hue_saturation.current_saturation = 0;
 
     endpoint_t *endpoint = extended_color_light::create(node, &light_config, ENDPOINT_FLAG_NONE, nullptr);
     if (!endpoint) {
@@ -97,6 +116,17 @@ extern "C" void app_main()
     // Get endpoint ID for driver
     uint16_t endpoint_id = endpoint::get_id(endpoint);
     ESP_LOGI(TAG, "Light endpoint created with ID: %d", endpoint_id);
+
+    // Configure OpenThread platform before starting Matter
+#if CHIP_DEVICE_CONFIG_ENABLE_THREAD
+    esp_openthread_platform_config_t ot_config = {
+        .radio_config = ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG(),
+        .host_config = ESP_OPENTHREAD_DEFAULT_HOST_CONFIG(),
+        .port_config = ESP_OPENTHREAD_DEFAULT_PORT_CONFIG(),
+    };
+    set_openthread_platform_config(&ot_config);
+    ESP_LOGI(TAG, "OpenThread platform configured");
+#endif
 
     // Start Matter
     err = esp_matter::start(app_event_cb);

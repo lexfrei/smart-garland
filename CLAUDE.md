@@ -131,6 +131,10 @@ Project is designed for multiple targets and garland types:
 - `led_strip` — ESP Component Registry LED driver
 - `openthread` — Thread stack (via esp-matter)
 
+## Claude Code Limitations
+
+- **NEVER attempt to read serial monitor output** — espflash monitor requires interactive terminal, cat/stty don't work reliably. Ask user to run monitor manually and paste relevant output.
+
 ## Historical Note
 
 Previous Rust implementation (rs-matter + Embassy) is preserved in `rust-experimental` branch.

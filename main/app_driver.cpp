@@ -93,7 +93,6 @@ esp_err_t app_driver_init(void)
         .strip_gpio_num = LED_STRIP_GPIO,
         .max_leds = LED_STRIP_NUM_LEDS,
         .led_model = LED_MODEL_WS2812,
-        .color_component_format = LED_STRIP_COLOR_COMPONENT_FMT_GRB,
         .flags = {
             .invert_out = false,
         },
